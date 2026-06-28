@@ -1,10 +1,18 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/ThemeContext';
 import { MOCK_DEVELOPMENTS, DEVELOPMENT_STATUS_MAP } from '../data/mockDevelopments';
+import { fetchDevelopments } from '../services/api';
 import { Breadcrumbs } from '../components/navigation/Breadcrumbs';
-import type { Property } from '../data/types';
+import type { Property, Development } from '../data/types';
+
+const DEVELOPMENT_COORDS: Record<string, { lat: number; lng: number }> = {
+  'd-1': { lat: 20.7682, lng: -105.5437 },
+  'd-2': { lat: 19.4252, lng: -99.1636 },
+  'd-3': { lat: 25.3333, lng: -100.6500 },
+  'd-4': { lat: 23.4333, lng: -109.4167 },
+};
 
 export function DevelopmentsScreen({
   onBack,
@@ -17,6 +25,15 @@ export function DevelopmentsScreen({
   const { width } = useWindowDimensions();
   const isDesktop = width >= 900;
   const padding = isDesktop ? 64 : 20;
+  const [developments, setDevelopments] = useState<Development[]>(MOCK_DEVELOPMENTS);
+
+  useEffect(() => {
+    fetchDevelopments()
+      .then((data) => { if (data.length) setDevelopments(data); })
+      .catch(() => {});
+  }, []);
+
+  const heroDev = developments[0];
 
   return (
     <ScrollView style={[styles.page, { backgroundColor: theme.background }]} showsVerticalScrollIndicator={false}>
@@ -25,25 +42,25 @@ export function DevelopmentsScreen({
 
         <View style={styles.hero}>
           <Text style={[styles.heroLabel, { color: theme.primary }]}>DESARROLLO DESTACADO</Text>
-          <Text style={[styles.heroTitle, { color: theme.primary }]}>Reserva Obsidiana</Text>
+          <Text style={[styles.heroTitle, { color: theme.primary }]}>{heroDev.title}</Text>
           <Text style={[styles.heroDesc, { color: theme.onSurfaceVariant }]}>
-            Una obra maestra arquitectónica esculpida en los acantilados de basalto de la costa nayarita.
-            Experimenta un estilo de vida definido por la belleza natural del Pacífico y el lujo interior
-            sin concesiones.
+            {heroDev.description}
           </Text>
 
           <View style={styles.progressSection}>
             <View style={styles.progressRow}>
               <Text style={[styles.progressLabel, { color: theme.onSurfaceVariant }]}>PROGRESO DE CONSTRUCCIÓN</Text>
-              <Text style={[styles.progressValue, { color: theme.primary }]}>74%</Text>
+              <Text style={[styles.progressValue, { color: theme.primary }]}>
+                {Math.round((1 - heroDev.unitsLeft / heroDev.unitsTotal) * 100)}%
+              </Text>
             </View>
             <View style={[styles.progressBar, { backgroundColor: theme.surfaceContainerHighest }]}>
-              <View style={[styles.progressFill, { backgroundColor: theme.primaryContainer, width: '74%' }]} />
+              <View style={[styles.progressFill, { backgroundColor: theme.primaryContainer, width: `${Math.round((1 - heroDev.unitsLeft / heroDev.unitsTotal) * 100)}%` }]} />
             </View>
-            <Text style={[styles.progressDate, { color: theme.outline }]}>Finalización estimada: Q4 2025</Text>
+            <Text style={[styles.progressDate, { color: theme.outline }]}>Finalización estimada: {heroDev.completionDate}</Text>
           </View>
 
-          {/*<View style={styles.heroActions}>
+          <View style={styles.heroActions}>
             <Pressable
               onPress={() => onNavigateProperty?.({
                 id: 'p-6',
@@ -73,12 +90,12 @@ export function DevelopmentsScreen({
             >
               <Text style={[styles.heroBtnOutlineText, { color: theme.primary }]}>VER UNIDADES</Text>
             </Pressable>
-          </View>*/}
+          </View>
         </View>
 
         <View style={styles.heroImage}>
           <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1400&q=80' }}
+            source={{ uri: heroDev.images[0] }}
             style={styles.heroImg}
             resizeMode="cover"
           />
@@ -94,17 +111,17 @@ export function DevelopmentsScreen({
         </View>
 
         <View style={[styles.grid, { gap: theme.spacing.gutter }]}>
-          {MOCK_DEVELOPMENTS.map((dev) => (
+          {developments.map((dev) => (
             <Pressable
               key={dev.id}
               onPress={() => onNavigateProperty?.({
                 id: `dev-${dev.id}`,
                 title: dev.title,
                 images: dev.images,
-                location: { label: dev.location, lat: 20.6534, lng: -105.2253 },
+                location: { label: dev.location, ...(DEVELOPMENT_COORDS[dev.id] ?? { lat: 20.6534, lng: -105.2253 }) },
                 description: dev.description,
                 features: { bedrooms: 4, bathrooms: 5, builtAreaM2: 500, landAreaM2: 800, floors: 2, parkingSpaces: 3 },
-                price: parseInt(dev.priceRange.replace(/[^0-9]/g, '').slice(0, 6)) * 1000 || 5000000,
+                price: Math.round(parseFloat(dev.priceRange.match(/[\d.]+/)?.[0] ?? '5') * 1000000) || 5000000,
                 status: 'pre_construction',
                 type: 'villa',
                 operation: 'sale',

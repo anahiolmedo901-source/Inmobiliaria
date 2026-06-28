@@ -1,21 +1,26 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/ThemeContext';
 import { MOCK_PROPERTIES } from '../data/mockProperties';
+import { fetchProperties } from '../services/api';
 import { HeroCarousel } from '../components/properties/HeroCarousel';
 import { PropertyCard } from '../components/properties/PropertyCard';
 import type { Property } from '../data/types';
 
-const FEATURED = MOCK_PROPERTIES.filter((p) => p.featured);
+const MOCK_FEATURED = MOCK_PROPERTIES.filter((p) => p.featured);
 
 export function HomeScreen({
   onNavigateProperty,
   onNavigateProperties,
+  onNavigateDevelopments,
+  onNavigateAgents,
   onNavigateContact,
 }: {
   onNavigateProperty?: (property: Property) => void;
-  onNavigateProperties?: () => void;
+  onNavigateProperties?: (searchLocation?: string, searchType?: string) => void;
+  onNavigateDevelopments?: () => void;
+  onNavigateAgents?: () => void;
   onNavigateContact?: () => void;
 }) {
   const { theme } = useAppTheme();
@@ -23,10 +28,27 @@ export function HomeScreen({
   const isDesktop = width >= 900;
   const [searchLocation, setSearchLocation] = useState('');
   const [searchType, setSearchType] = useState('');
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [featured, setFeatured] = useState<Property[]>(MOCK_FEATURED);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchProperties({ featured: true, limit: 10 })
+      .then((res) => { if (res.data.length) setFeatured(res.data); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <ScrollView style={[styles.page, { backgroundColor: theme.background }]} showsVerticalScrollIndicator={false}>
-      <HeroCarousel properties={FEATURED} onPropertyPress={onNavigateProperty} />
+      {loading && featured.length === 0 ? (
+        <View style={[styles.loadingBanner, { backgroundColor: theme.surfaceContainerHigh }]}>
+          <Ionicons name="sync" size={24} color={theme.primary} />
+          <Text style={[styles.loadingText, { color: theme.onSurfaceVariant }]}>Cargando propiedades destacadas...</Text>
+        </View>
+      ) : (
+        <HeroCarousel properties={featured} onPropertyPress={onNavigateProperty} />
+      )}
 
       <View style={[styles.searchSection, { paddingHorizontal: isDesktop ? 64 : 20 }]}>
         <View style={[styles.searchContainer, { borderColor: theme.outlineVariant, backgroundColor: theme.surface }]}>
@@ -53,7 +75,7 @@ export function HomeScreen({
               />
             </View>
             <Pressable
-              onPress={onNavigateProperties}
+              onPress={() => onNavigateProperties?.(searchLocation, searchType)}
               style={({ pressed }) => [
                 styles.searchBtn,
                 { backgroundColor: theme.primaryContainer, opacity: pressed ? 0.9 : 1 },
@@ -73,13 +95,13 @@ export function HomeScreen({
             <Text style={[styles.sectionLabel, { color: theme.primary }]}>COLECCIÓN DESTACADA</Text>
             <Text style={[styles.sectionTitle, { color: theme.onSurface }]}>Residencias Excepcionales</Text>
           </View>
-          <Pressable onPress={onNavigateProperties}>
+          <Pressable onPress={() => onNavigateProperties?.()}>
             <Text style={[styles.viewAll, { color: theme.primary }]}>Ver Inventario Global</Text>
           </Pressable>
         </View>
 
         <View style={[styles.grid, { gap: theme.spacing.gutter }]}>
-          {FEATURED.map((property) => (
+          {featured.map((property) => (
             <View key={property.id} style={[styles.gridItem, isDesktop && { width: '30%' }]}>
               <PropertyCard property={property} onPress={() => onNavigateProperty?.(property)} />
             </View>
@@ -171,8 +193,16 @@ export function HomeScreen({
               placeholder="Correo Electrónico"
               placeholderTextColor={theme.onSurfaceVariant}
               style={[styles.newsletterInput, { backgroundColor: theme.surfaceContainerLowest, color: theme.onSurface, borderColor: theme.outlineVariant }]}
+              value={newsletterEmail}
+              onChangeText={setNewsletterEmail}
             />
             <Pressable
+              onPress={() => {
+                if (newsletterEmail.trim()) {
+                  alert('Gracias por suscribirte. Pronto recibirás nuestras novedades.');
+                  setNewsletterEmail('');
+                }
+              }}
               style={({ pressed }) => [
                 styles.newsletterBtn,
                 { backgroundColor: theme.primary, opacity: pressed ? 0.9 : 1 },
@@ -198,9 +228,15 @@ export function HomeScreen({
             <View style={styles.footerLinks}>
               <View>
                 <Text style={[styles.footerLinkTitle, { color: theme.primaryFixed }]}>Navegación</Text>
-                <Text style={[styles.footerLink, { color: theme.secondaryFixedDim + 'b3' }]}>Propiedades</Text>
-                <Text style={[styles.footerLink, { color: theme.secondaryFixedDim + 'b3' }]}>Desarrollos</Text>
-                <Text style={[styles.footerLink, { color: theme.secondaryFixedDim + 'b3' }]}>Agentes</Text>
+                <Pressable onPress={() => onNavigateProperties?.()}>
+                  <Text style={[styles.footerLink, { color: theme.secondaryFixedDim + 'b3' }]}>Propiedades</Text>
+                </Pressable>
+                <Pressable onPress={onNavigateDevelopments}>
+                  <Text style={[styles.footerLink, { color: theme.secondaryFixedDim + 'b3' }]}>Desarrollos</Text>
+                </Pressable>
+                <Pressable onPress={onNavigateAgents}>
+                  <Text style={[styles.footerLink, { color: theme.secondaryFixedDim + 'b3' }]}>Agentes</Text>
+                </Pressable>
               </View>
               <View>
                 <Text style={[styles.footerLinkTitle, { color: theme.primaryFixed }]}>Legal</Text>
@@ -277,4 +313,6 @@ const styles = StyleSheet.create({
   footerLink: { fontSize: 14, marginBottom: 12, lineHeight: 20 },
   footerBottom: { borderTopWidth: 1, marginTop: 60, paddingTop: 30 },
   footerCopy: { fontSize: 12, fontWeight: '600', letterSpacing: 0.5 },
+  loadingBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 80, marginHorizontal: 20 },
+  loadingText: { fontSize: 15, fontWeight: '600' },
 });

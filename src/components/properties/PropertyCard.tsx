@@ -30,7 +30,13 @@ export function PropertyCard({
       ]}
     >
       <View style={[styles.imageShell, { backgroundColor: theme.surfaceContainerHigh }]}>
-        <Image source={{ uri: property.images[0] }} style={styles.image} resizeMode="cover" />
+        {property.images[0] ? (
+          <Image source={{ uri: property.images[0] }} style={styles.image} resizeMode="cover" />
+        ) : (
+          <View style={[styles.image, { backgroundColor: theme.surfaceContainerHighest, alignItems: 'center', justifyContent: 'center' }]}>
+            <Ionicons name="image" size={32} color={theme.onSurfaceVariant} />
+          </View>
+        )}
         <View style={styles.badges}>
           {property.featured ? (
             <Text style={[styles.badge, { backgroundColor: theme.primary, color: theme.onPrimary }]}>

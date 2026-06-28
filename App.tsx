@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 import { ThemeProvider, useAppTheme, type AuthRole } from './src/theme/ThemeContext';
@@ -17,7 +17,7 @@ import type { Property } from './src/data/types';
 import type { PropertyAgent } from './src/data/types';
 import { MOCK_PROPERTIES } from './src/data/mockProperties';
 import { MOCK_AGENTS } from './src/data/mockAgents';
-import { getMockUserInfo } from './src/utils/login';
+import { fetchMe, getStoredToken, clearToken } from './src/services/api';
 import { useUrlRouter } from './src/utils/router';
 
 const LOGGED_USER_AVATAR = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=128&q=80';
@@ -34,8 +34,26 @@ function AppNavigator() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
+  const [searchLocation, setSearchLocation] = useState('');
+  const [searchType, setSearchType] = useState('');
 
   const isLoggedIn = role !== 'public' && userEmail !== null;
+
+  useEffect(() => {
+    const token = getStoredToken();
+    if (token) {
+      fetchMe()
+        .then((user) => {
+          const r = (user.role === 'agent' ? 'agent' : user.role === 'admin' ? 'admin' : 'public') as AuthRole;
+          setRole(r);
+          setUserEmail(user.email);
+          setUserName(user.name);
+        })
+        .catch(() => {
+          clearToken();
+        });
+    }
+  }, [setRole]);
 
   const go = useCallback((target: 'home' | 'properties' | 'developments' | 'agents' | 'contact' | 'login' | 'dashboard') => {
     setDrawerOpen(false);
@@ -43,6 +61,12 @@ function AppNavigator() {
     setSelectedAgent(null);
     navigate(target);
   }, [navigate]);
+
+  const handleProperties = useCallback((loc?: string, type?: string) => {
+    setSearchLocation(loc ?? '');
+    setSearchType(type ?? '');
+    go('properties');
+  }, [go]);
 
   const handlePropertyPress = useCallback((property: Property) => {
     setSelectedProperty(property);
@@ -54,17 +78,15 @@ function AppNavigator() {
     navigate('agentPortfolio');
   }, [navigate]);
 
-  const handleLogin = useCallback((newRole?: AuthRole, email?: string) => {
+  const handleLogin = useCallback((newRole?: AuthRole, email?: string, name?: string) => {
     if (newRole) setRole(newRole);
-    if (email) {
-      setUserEmail(email);
-      const info = getMockUserInfo(email);
-      if (info?.name) setUserName(info.name);
-    }
+    if (email) setUserEmail(email);
+    if (name) setUserName(name);
     go(newRole === 'public' ? 'home' : 'dashboard');
   }, [setRole, go]);
 
   const handleLogout = useCallback(() => {
+    clearToken();
     setRole('public');
     setUserEmail(null);
     setUserName(null);
@@ -101,7 +123,9 @@ function AppNavigator() {
       {route === 'home' && (
         <HomeScreen
           onNavigateProperty={handlePropertyPress}
-          onNavigateProperties={() => go('properties')}
+          onNavigateProperties={handleProperties}
+          onNavigateDevelopments={() => go('developments')}
+          onNavigateAgents={() => go('agents')}
           onNavigateContact={() => go('contact')}
         />
       )}
@@ -110,6 +134,8 @@ function AppNavigator() {
         <PropertiesScreen
           onNavigateProperty={handlePropertyPress}
           onBack={() => go('home')}
+          searchLocation={searchLocation}
+          searchType={searchType}
         />
       )}
 

@@ -1,10 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/ThemeContext';
 import { Breadcrumbs } from '../components/navigation/Breadcrumbs';
 import { PropertyCard } from '../components/properties/PropertyCard';
 import { MOCK_PROPERTIES } from '../data/mockProperties';
+import { fetchProperties } from '../services/api';
 import type { PropertyAgent, Property } from '../data/types';
 
 export function AgentPortfolioScreen({
@@ -20,10 +21,17 @@ export function AgentPortfolioScreen({
   const { width } = useWindowDimensions();
   const isDesktop = width >= 900;
   const padding = isDesktop ? 64 : 20;
+  const [properties, setProperties] = useState<Property[]>(MOCK_PROPERTIES);
+
+  useEffect(() => {
+    fetchProperties({ limit: 100 })
+      .then((res) => { if (res.data.length) setProperties(res.data); })
+      .catch(() => {});
+  }, []);
 
   const agentProperties = useMemo(
-    () => MOCK_PROPERTIES.filter((p) => p.agent.id === agent.id),
-    [agent.id],
+    () => properties.filter((p) => p.agent.id === agent.id),
+    [properties, agent.id],
   );
 
   const whatsappNumber = agent.whatsappE164?.replace(/^\+/, '').replace(/[^\d]/g, '');
@@ -99,7 +107,7 @@ export function AgentPortfolioScreen({
             Portafolio de {agent.name}
           </Text>
           <Text style={[styles.sectionCount, { color: theme.onSurfaceVariant }]}>
-            {agentProperties.length} propiedades
+            {agentProperties.length} {agentProperties.length === 1 ? 'propiedad' : 'propiedades'}
           </Text>
         </View>
 

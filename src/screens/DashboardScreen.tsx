@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/ThemeContext';
 import { MOCK_PROPERTIES } from '../data/mockProperties';
+import { fetchProperties } from '../services/api';
 import type { Property } from '../data/types';
 import type { AuthRole } from '../theme/ThemeContext';
 
@@ -32,8 +33,27 @@ export function DashboardScreen({
   const { width } = useWindowDimensions();
   const isDesktop = width >= 900;
   const padding = isDesktop ? 64 : 20;
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [allProperties, setAllProperties] = useState<Property[]>(MOCK_PROPERTIES);
+  const pageSize = 5;
 
-  const totalValue = MOCK_PROPERTIES.reduce((sum, p) => sum + p.price, 0);
+  useEffect(() => {
+    fetchProperties({ limit: 100 })
+      .then((res) => { if (res.data.length) setAllProperties(res.data); })
+      .catch(() => {});
+  }, []);
+
+  const filtered = allProperties.filter((p) =>
+    searchQuery
+      ? p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.location.label.toLowerCase().includes(searchQuery.toLowerCase())
+      : true
+  );
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const paginated = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  const totalValue = allProperties.reduce((sum, p) => sum + p.price, 0);
 
   const today = new Date();
   const dateStr = today.toLocaleDateString('es-MX', {
@@ -43,11 +63,11 @@ export function DashboardScreen({
   });
 
   const sidebarItems = [
-    { icon: 'grid' as const, label: 'Panel', active: true },
-    { icon: 'business' as const, label: 'Propiedades', active: false },
-    { icon: 'analytics' as const, label: 'Estadísticas', active: false },
-    { icon: 'people' as const, label: 'Agentes', active: false },
-    { icon: 'settings' as const, label: 'Ajustes', active: false },
+    { icon: 'grid' as const, label: 'Panel', active: true, onPress: () => {} },
+    { icon: 'business' as const, label: 'Propiedades', active: false, onPress: () => {} },
+    { icon: 'analytics' as const, label: 'Estadísticas', active: false, onPress: () => {} },
+    { icon: 'people' as const, label: 'Agentes', active: false, onPress: () => {} },
+    { icon: 'settings' as const, label: 'Ajustes', active: false, onPress: () => {} },
   ];
 
   return (
@@ -68,6 +88,7 @@ export function DashboardScreen({
             {sidebarItems.map((item) => (
               <Pressable
                 key={item.label}
+                onPress={item.onPress}
                 style={({ pressed }) => [
                   styles.sidebarItem,
                   {
@@ -94,6 +115,7 @@ export function DashboardScreen({
           </View>
 
           <Pressable
+            onPress={() => {}}
             style={({ pressed }) => [
               styles.addBtn,
               { backgroundColor: theme.primary, opacity: pressed ? 0.9 : 1 },
@@ -116,7 +138,7 @@ export function DashboardScreen({
                 </Text>
               </View>
             </View>
-            <Pressable style={styles.sidebarLink}>
+            <Pressable onPress={() => {}} style={styles.sidebarLink}>
               <Ionicons name="help-circle" size={18} color={theme.onSurfaceVariant} />
               <Text style={[styles.sidebarLinkText, { color: theme.onSurfaceVariant }]}>Ayuda</Text>
             </Pressable>
@@ -130,6 +152,17 @@ export function DashboardScreen({
 
       <View style={[styles.main, isDesktop && { marginLeft: 260 }]}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: padding, paddingVertical: 40 }}>
+          {!isDesktop ? (
+            <View style={[styles.mobileNav, { borderBottomColor: theme.outlineVariant }]}>
+              <Pressable onPress={onNavigateHome} style={styles.mobileBackBtn}>
+                <Ionicons name="arrow-back" size={24} color={theme.onSurface} />
+              </Pressable>
+              <Text style={[styles.mobileTitle, { color: theme.primary }]}>VIVIANA Pro</Text>
+              <Pressable onPress={onLogout} style={styles.mobileLogout}>
+                <Ionicons name="log-out" size={22} color={theme.onSurfaceVariant} />
+              </Pressable>
+            </View>
+          ) : null}
           <View style={styles.headerRow}>
             <View>
               <Text style={[styles.headerLabel, { color: theme.primary }]}>PANEL DE CONTROL</Text>
@@ -152,7 +185,7 @@ export function DashboardScreen({
                 <Text style={[styles.metricChange, { color: theme.primary }]}>+2 esta semana</Text>
               </View>
               <Text style={[styles.metricLabel, { color: theme.onSurfaceVariant }]}>PROPIEDADES ACTIVAS</Text>
-              <Text style={[styles.metricValue, { color: theme.onSurface }]}>{MOCK_PROPERTIES.length}</Text>
+              <Text style={[styles.metricValue, { color: theme.onSurface }]}>{allProperties.length}</Text>
               <View style={[styles.metricBar, { backgroundColor: theme.surfaceContainerHigh }]}>
                 <View style={[styles.metricBarFill, { backgroundColor: theme.primary, width: '75%' }]} />
               </View>
@@ -204,9 +237,11 @@ export function DashboardScreen({
                     placeholder="Buscar por nombre o ubicación..."
                     placeholderTextColor={theme.onSurfaceVariant}
                     style={[styles.searchInput, { color: theme.onSurface }]}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
                   />
                 </View>
-                <Pressable style={[styles.filterIcon, { backgroundColor: theme.surfaceContainer, borderColor: theme.outlineVariant }]}>
+                <Pressable onPress={() => {}} style={[styles.filterIcon, { backgroundColor: theme.surfaceContainer, borderColor: theme.outlineVariant }]}>
                   <Ionicons name="filter" size={18} color={theme.onSurfaceVariant} />
                 </Pressable>
               </View>
@@ -221,7 +256,7 @@ export function DashboardScreen({
                 <View style={{ width: 40 }} />
               </View>
 
-              {MOCK_PROPERTIES.slice(0, 5).map((property) => (
+              {paginated.map((property) => (
                 <Pressable
                   key={property.id}
                   onPress={() => onNavigateProperty?.(property)}
@@ -251,10 +286,10 @@ export function DashboardScreen({
                   </Text>
                   <View style={styles.inquiriesCell}>
                     <View style={[styles.avatar, { backgroundColor: theme.surfaceContainerHigh }]}>
-                      <Text style={styles.avatarText}>+{Math.floor(Math.random() * 15) + 2}</Text>
+                      <Text style={styles.avatarText}>+{property.id.charCodeAt(2) % 12 + 2}</Text>
                     </View>
                   </View>
-                  <Pressable style={styles.moreBtn}>
+                  <Pressable onPress={() => {}} style={styles.moreBtn}>
                     <Ionicons name="ellipsis-vertical" size={18} color={theme.onSurfaceVariant} />
                   </Pressable>
                 </Pressable>
@@ -263,22 +298,37 @@ export function DashboardScreen({
 
             <View style={styles.pagination}>
               <Text style={[styles.paginationInfo, { color: theme.onSurfaceVariant }]}>
-                Mostrando 1–5 de {MOCK_PROPERTIES.length} propiedades
+                Mostrando {Math.min((currentPage - 1) * pageSize + 1, filtered.length)}–{Math.min(currentPage * pageSize, filtered.length)} de {filtered.length} propiedades
               </Text>
               <View style={styles.paginationBtns}>
-                <Pressable style={[styles.pageBtn, { borderColor: theme.outlineVariant }]}>
+                <Pressable
+                  onPress={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  style={[styles.pageBtn, { borderColor: theme.outlineVariant }]}
+                >
                   <Ionicons name="chevron-back" size={18} color={theme.onSurfaceVariant} />
                 </Pressable>
-                <Pressable style={[styles.pageBtnActive, { backgroundColor: theme.primary }]}>
-                  <Text style={[styles.pageBtnText, { color: theme.onPrimary }]}>1</Text>
-                </Pressable>
-                <Pressable style={[styles.pageBtn, { borderColor: theme.outlineVariant }]}>
-                  <Text style={[styles.pageBtnText, { color: theme.onSurface }]}>2</Text>
-                </Pressable>
-                <Pressable style={[styles.pageBtn, { borderColor: theme.outlineVariant }]}>
-                  <Text style={[styles.pageBtnText, { color: theme.onSurface }]}>3</Text>
-                </Pressable>
-                <Pressable style={[styles.pageBtn, { borderColor: theme.outlineVariant }]}>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Pressable
+                    key={page}
+                    onPress={() => setCurrentPage(page)}
+                    style={page === currentPage
+                      ? [styles.pageBtnActive, { backgroundColor: theme.primary }]
+                      : [styles.pageBtn, { borderColor: theme.outlineVariant }]}
+                  >
+                    <Text
+                      style={[
+                        styles.pageBtnText,
+                        { color: page === currentPage ? theme.onPrimary : theme.onSurface },
+                      ]}
+                    >
+                      {page}
+                    </Text>
+                  </Pressable>
+                ))}
+                <Pressable
+                  onPress={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  style={[styles.pageBtn, { borderColor: theme.outlineVariant }]}
+                >
                   <Ionicons name="chevron-forward" size={18} color={theme.onSurfaceVariant} />
                 </Pressable>
               </View>
@@ -355,4 +405,8 @@ const styles = StyleSheet.create({
   pageBtn: { width: 40, height: 40, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   pageBtnActive: { width: 40, height: 40, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   pageBtnText: { fontSize: 13, fontWeight: '700' },
+  mobileNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, paddingBottom: 16, marginBottom: 24 },
+  mobileBackBtn: { padding: 8 },
+  mobileTitle: { fontSize: 20, fontWeight: '700', fontFamily: 'Libre Caslon Text' },
+  mobileLogout: { padding: 8 },
 });

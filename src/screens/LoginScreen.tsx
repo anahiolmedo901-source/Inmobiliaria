@@ -2,14 +2,15 @@ import React, { useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/ThemeContext';
-import { validateCredentials, MOCK_CREDENTIALS_HINT } from '../utils/login';
+import { loginUser } from '../services/api';
+import { validateCredentials, MOCK_CREDENTIALS_HINT, getMockUserInfo } from '../utils/login';
 import type { AuthRole } from '../theme/ThemeContext';
 
 export function LoginScreen({
   onLogin,
   onBack,
 }: {
-  onLogin?: (role: AuthRole, email: string) => void;
+  onLogin?: (role: AuthRole, email: string, name?: string) => void;
   onBack?: () => void;
 }) {
   const { theme } = useAppTheme();
@@ -19,21 +20,34 @@ export function LoginScreen({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  function handleSubmit() {
+  async function handleSubmit() {
     setError(null);
 
-    const result = validateCredentials({ email, password });
-    if (!result.success) {
-      setError(result.error ?? 'Error desconocido');
+    if (!email.trim() || !password.trim()) {
+      setError('Ingresa tu correo y contraseña');
       return;
     }
 
     setLoading(true);
 
-    setTimeout(() => {
-      setLoading(false);
-      onLogin?.(result.role ?? 'public', email);
-    }, 800);
+    try {
+      const result = await loginUser(email.trim(), password.trim());
+      const role = (result.user.role === 'agent' ? 'agent' : result.user.role === 'admin' ? 'admin' : 'public') as AuthRole;
+      onLogin?.(role, result.user.email, result.user.name);
+    } catch {
+      const mockResult = validateCredentials({ email, password });
+      if (mockResult.success) {
+        const info = getMockUserInfo(email);
+        setTimeout(() => {
+          setLoading(false);
+          onLogin?.(mockResult.role ?? 'public', email, info?.name);
+        }, 500);
+        return;
+      }
+      setError(mockResult.error ?? 'Credenciales inválidas');
+    }
+
+    setLoading(false);
   }
 
   return (
@@ -83,9 +97,9 @@ export function LoginScreen({
                 : 'Accede a la base de datos global de propiedades y herramientas de gestión.'}
             </Text>
 
-            {/* Social Login */}
             <View style={styles.socialRow}>
               <Pressable
+                onPress={() => {}}
                 style={({ pressed }) => [
                   styles.socialBtn,
                   { borderColor: theme.outlineVariant, opacity: pressed ? 0.9 : 1 },
@@ -95,6 +109,7 @@ export function LoginScreen({
                 <Text style={[styles.socialText, { color: theme.onSurface }]}>Google</Text>
               </Pressable>
               <Pressable
+                onPress={() => {}}
                 style={({ pressed }) => [
                   styles.socialBtn,
                   { borderColor: theme.outlineVariant, opacity: pressed ? 0.9 : 1 },
@@ -111,7 +126,6 @@ export function LoginScreen({
               <View style={[styles.dividerLine, { backgroundColor: theme.outlineVariant }]} />
             </View>
 
-            {/* Form */}
             <View style={styles.form}>
               {error ? (
                 <View style={[styles.errorBox, { backgroundColor: theme.errorContainer + '80' }]}>
@@ -136,7 +150,7 @@ export function LoginScreen({
               <View style={styles.field}>
                 <View style={styles.fieldHeader}>
                   <Text style={[styles.fieldLabel, { color: theme.onSurfaceVariant }]}>CONTRASEÑA</Text>
-                  <Pressable>
+                  <Pressable onPress={() => {}}>
                     <Text style={[styles.forgotLink, { color: theme.primary }]}>¿Olvidaste?</Text>
                   </Pressable>
                 </View>
@@ -166,13 +180,15 @@ export function LoginScreen({
 
             <Text style={[styles.footerText, { color: theme.onSurfaceVariant }]}>
               ¿No eres miembro del círculo exclusivo?
-              <Text style={{ color: theme.primary, fontWeight: '700' }}> Solicitar Invitación</Text>
+              <Pressable onPress={() => {}}>
+                <Text style={{ color: theme.primary, fontWeight: '700' }}> Solicitar Invitación</Text>
+              </Pressable>
             </Text>
 
             <View style={[styles.hintBox, { backgroundColor: theme.surfaceContainer, borderColor: theme.outlineVariant }]}>
               <Ionicons name="information-circle" size={16} color={theme.primary} />
               <Text style={[styles.hintText, { color: theme.onSurfaceVariant }]}>
-                Usa admin@viviana.mx / admin123 para acceso completo
+                Demo: admin@viviana.mx / Admin123! | agente@viviana.mx / Agent123!
               </Text>
             </View>
           </View>

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
   Image,
@@ -39,6 +39,16 @@ export function HeroCarousel({
     setActiveIndex(idx);
   };
 
+  useEffect(() => {
+    if (properties.length <= 1) return;
+    const timer = setInterval(() => {
+      const next = (activeIndex + 1) % properties.length;
+      setActiveIndex(next);
+      scrollRef.current?.scrollTo({ x: next * SCREEN_WIDTH, animated: true });
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [activeIndex, properties.length]);
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -55,7 +65,11 @@ export function HeroCarousel({
             style={[styles.slide, { width: SCREEN_WIDTH }]}
             onPress={() => onPropertyPress?.(property)}
           >
-            <Image source={{ uri: property.images[0] }} style={styles.image} resizeMode="cover" />
+            {property.images[0] ? (
+              <Image source={{ uri: property.images[0] }} style={styles.image} resizeMode="cover" />
+            ) : (
+              <View style={[styles.image, { backgroundColor: '#333', alignItems: 'center', justifyContent: 'center' }]} />
+            )}
             <View style={styles.overlay}>
               <View style={styles.slideContent}>
                 <Text style={styles.slideBadge}>COLECCIÓN DESTACADA</Text>

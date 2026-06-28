@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/ThemeContext';
 import { MOCK_AGENTS } from '../data/mockAgents';
+import { fetchAgents } from '../services/api';
 import type { PropertyAgent } from '../data/types';
 import { Breadcrumbs } from '../components/navigation/Breadcrumbs';
 
@@ -15,7 +16,7 @@ const PROFESSIONAL_AVATARS: Record<string, string> = {
   'a-6': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=512&q=80',
 };
 
-const AGENTS_WITH_PROFESSIONAL_PHOTOS = MOCK_AGENTS.map((agent) => ({
+const PROFESSIONAL_PHOTO_AGENTS = MOCK_AGENTS.map((agent) => ({
   ...agent,
   avatarUrl: PROFESSIONAL_AVATARS[agent.id] || agent.avatarUrl,
 }));
@@ -32,18 +33,25 @@ export function AgentsScreen({
   const isDesktop = width >= 900;
   const padding = isDesktop ? 64 : 20;
   const [searchQuery, setSearchQuery] = useState('');
+  const [agents, setAgents] = useState<PropertyAgent[]>(PROFESSIONAL_PHOTO_AGENTS);
+
+  useEffect(() => {
+    fetchAgents()
+      .then((data) => { if (data.length) setAgents(data); })
+      .catch(() => {});
+  }, []);
 
   const filteredAgents = useMemo(() => {
-    if (!searchQuery.trim()) return AGENTS_WITH_PROFESSIONAL_PHOTOS;
+    if (!searchQuery.trim()) return agents;
     const q = searchQuery.trim().toLowerCase();
-    return AGENTS_WITH_PROFESSIONAL_PHOTOS.filter(
+    return agents.filter(
       (a) =>
         a.name.toLowerCase().includes(q) ||
         a.region?.toLowerCase().includes(q) ||
         a.specialties?.toLowerCase().includes(q) ||
         a.title.toLowerCase().includes(q)
     );
-  }, [searchQuery]);
+  }, [searchQuery, agents]);
 
   return (
     <ScrollView style={[styles.page, { backgroundColor: theme.background }]} showsVerticalScrollIndicator={false}>

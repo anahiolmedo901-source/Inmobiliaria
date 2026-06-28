@@ -29,5 +29,5 @@ export function PropertyDetailScreen({
     };
   }, [property, onBack]);
 
-  return <PropertyDetailLayout property={model} />;
+  return <PropertyDetailLayout property={model} onBack={onBack} />;
 }

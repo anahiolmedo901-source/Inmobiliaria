@@ -12,9 +12,9 @@ type LoginResult = {
 };
 
 const MOCK_USERS: Record<string, { password: string; role: AuthRole; name: string }> = {
-  'admin@viviana.mx': { password: 'admin123', role: 'admin', name: 'Admin Viviana' },
-  'agente@viviana.mx': { password: 'agente123', role: 'agent', name: 'Julian Thorne' },
-  'cliente@viviana.mx': { password: 'cliente123', role: 'public', name: 'Cliente VIP' },
+  'admin@viviana.mx': { password: 'Admin123!', role: 'admin', name: 'Admin Viviana' },
+  'agente@viviana.mx': { password: 'Agent123!', role: 'agent', name: 'Julian Thorne' },
+  'cliente@viviana.mx': { password: 'Client123!', role: 'public', name: 'Cliente VIP' },
 };
 
 export function validateCredentials({ email, password }: Credentials): LoginResult {
@@ -47,7 +47,7 @@ export function getMockUserInfo(email: string) {
 }
 
 export const MOCK_CREDENTIALS_HINT = {
-  admin: { email: 'admin@viviana.mx', password: 'admin123' },
-  agent: { email: 'agente@viviana.mx', password: 'agente123' },
-  client: { email: 'cliente@viviana.mx', password: 'cliente123' },
+  admin: { email: 'admin@viviana.mx', password: 'Admin123!' },
+  agent: { email: 'agente@viviana.mx', password: 'Agent123!' },
+  client: { email: 'cliente@viviana.mx', password: 'Client123!' },
 };

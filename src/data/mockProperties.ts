@@ -151,6 +151,10 @@ export const MOCK_PROPERTIES: Property[] = [
       phoneE164: '+524421234567',
       email: 'sofia@viviana.mx',
       whatsappE164: '+524421234567',
+      experience: '12+ Años',
+      specialties: 'Haciendas Históricas',
+      languages: 'ES, EN',
+      region: 'Bajío',
     },
   },
   {
@@ -208,6 +212,10 @@ export const MOCK_PROPERTIES: Property[] = [
       phoneE164: '+525512345678',
       email: 'mariana@viviana.mx',
       whatsappE164: '+525512345678',
+      experience: '10+ Años',
+      specialties: 'Penthouse y Áticos',
+      languages: 'ES, EN, FR',
+      region: 'CDMX',
     },
   },
   {
@@ -234,6 +242,10 @@ export const MOCK_PROPERTIES: Property[] = [
       phoneE164: '+526241234567',
       email: 'camila@viviana.mx',
       whatsappE164: '+526241234567',
+      experience: '18+ Años',
+      specialties: 'Propiedades de Playa',
+      languages: 'ES, EN',
+      region: 'Los Cabos',
     },
   },
 ];

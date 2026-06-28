@@ -62,8 +62,10 @@ function formatTel(phoneE164?: string) {
 
 export function PropertyDetailLayout({
   property,
+  onBack,
 }: {
   property: PropertyDetailModel;
+  onBack?: () => void;
 }) {
   const { theme } = useAppTheme();
   const { width } = useWindowDimensions();
@@ -92,7 +94,7 @@ export function PropertyDetailLayout({
     return isDesktop ? { height: 380 } : { height: 300 };
   }, [isDesktop]);
 
-  function handleBack() {}
+  function handleBack() { onBack?.(); }
 
   return (
     <ScrollView

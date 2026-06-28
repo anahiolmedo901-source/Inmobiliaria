@@ -312,10 +312,11 @@ export function AdvancedPropertyFilters({
               onPress={handleApply}
               style={({ pressed }) => [
                 styles.primaryBtn,
+                { backgroundColor: theme.primary },
                 pressed && { opacity: 0.92 },
               ]}
             >
-              <Text style={[styles.primaryBtnText]}>Aplicar</Text>
+              <Text style={[styles.primaryBtnText, { color: theme.onPrimary }]}>Aplicar</Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -384,13 +385,11 @@ const styles = StyleSheet.create({
   },
   primaryBtn: {
     flex: 1,
-    backgroundColor: '#C9A14A',
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center',
   },
   primaryBtnText: {
-    color: '#1C1C1C',
     fontWeight: '900',
     fontSize: 14,
   },

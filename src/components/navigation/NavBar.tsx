@@ -88,7 +88,21 @@ export function NavBar({
               <Ionicons name="person" size={16} color={theme.onPrimaryContainer} />
               <Text style={[styles.loginText, { color: theme.onPrimaryContainer }]}>{userName}</Text>
             </Pressable>
-          ) : null}
+          ) : (
+            <Pressable
+              onPress={onLogin}
+              style={({ pressed }) => [
+                styles.loginBtn,
+                {
+                  backgroundColor: theme.primaryContainer,
+                  opacity: pressed ? 0.9 : 1,
+                },
+              ]}
+            >
+              <Ionicons name="log-in" size={16} color={theme.onPrimaryContainer} />
+              <Text style={[styles.loginText, { color: theme.onPrimaryContainer }]}>Iniciar Sesión</Text>
+            </Pressable>
+          )}
 
           {showMenuButton && !isDesktop ? (
             <Pressable onPress={onMenuToggle} style={styles.iconBtn}>

@@ -55,7 +55,7 @@ export function MapContainer({ latitude, longitude, style }: MapContainerProps) 
     <View style={[{ flex: 1, backgroundColor: theme.surfaceContainerHighest }, style]}>
       <Image
         source={{
-          uri: `https://maps.geoapify.com/v1/staticmap?style=osm-carto&width=600&height=300&center=lonlat:${longitude},${latitude}&zoom=15&marker=lonlat:${longitude},${latitude};color:%23c9a14a;size:medium&apiKey=`,
+          uri: `https://maps.geoapify.com/v1/staticmap?style=osm-carto&width=600&height=300&center=lonlat:${longitude},${latitude}&zoom=15&marker=lonlat:${longitude},${latitude};color:%23c9a14a;size:medium&apiKey=GEOAPIFY_API_KEY`,
         }}
         style={[StyleSheet.absoluteFill, { opacity: 0.5 }]}
         resizeMode="cover"
